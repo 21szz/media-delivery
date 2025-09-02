@@ -3,19 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MediaHub Pro - Content Delivery Network</title>
+    <title>MediaHub Pro - Advanced Content Delivery Network</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --primary: #2563eb;
             --secondary: #64748b;
             --accent: #f59e0b;
-            --dark: #1e293b;
-            --light: #f8fafc;
             --success: #10b981;
             --danger: #ef4444;
+            --dark: #1e293b;
+            --light: #f8fafc;
             --card-bg: #ffffff;
             --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
 
         * {
@@ -26,14 +27,14 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--gradient);
             min-height: 100vh;
             color: var(--dark);
             line-height: 1.6;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 2rem;
         }
@@ -93,30 +94,92 @@
             font-weight: 600;
         }
 
-        .form-group {
-            margin-bottom: 1.5rem;
+        .analytics-panel {
+            grid-column: 1 / -1;
         }
 
-        .form-group label {
-            display: block;
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .stat-card {
+            background: var(--gradient);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
             margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: var(--secondary);
         }
 
-        .form-control {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border: 2px solid #e2e8f0;
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem;
+            background: #f8fafc;
             border-radius: 8px;
-            font-size: 1rem;
-            transition: border-color 0.3s ease;
+            border-left: 4px solid var(--primary);
         }
 
-        .form-control:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        .info-label {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .info-value {
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: #f1f5f9;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .feature-item:hover {
+            background: #e2e8f0;
+            transform: translateX(5px);
+        }
+
+        .feature-item i {
+            color: var(--success);
+            font-size: 1.25rem;
         }
 
         .btn {
@@ -152,51 +215,30 @@
             transform: translateY(-2px);
         }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1rem;
-            margin-top: 2rem;
+        .form-group {
+            margin-bottom: 1.5rem;
         }
 
-        .stat-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            text-align: center;
-        }
-
-        .stat-number {
-            font-size: 2rem;
-            font-weight: 700;
+        .form-group label {
+            display: block;
             margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--secondary);
         }
 
-        .stat-label {
-            font-size: 0.9rem;
-            opacity: 0.9;
-        }
-
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
-            margin-top: 1.5rem;
-        }
-
-        .feature-item {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.75rem;
-            background: #f1f5f9;
+        .form-control {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e2e8f0;
             border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
         }
 
-        .feature-item i {
-            color: var(--success);
-            font-size: 1.25rem;
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
         footer {
@@ -226,6 +268,16 @@
             100% { transform: rotate(360deg); }
         }
 
+        @media (max-width: 1024px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .feature-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
         @media (max-width: 768px) {
             .dashboard {
                 grid-template-columns: 1fr;
@@ -238,6 +290,10 @@
             .feature-grid {
                 grid-template-columns: 1fr;
             }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -245,7 +301,7 @@
     <div class="container">
         <header>
             <h1><i class="fas fa-cloud-upload-alt"></i> MediaHub Pro</h1>
-            <p>Enterprise Content Delivery Network Solutions</p>
+            <p>Enterprise Content Delivery Network with Advanced Analytics</p>
         </header>
 
         <div class="dashboard">
@@ -271,6 +327,10 @@
                         <div class="stat-number">50ms</div>
                         <div class="stat-label">Avg. Response</div>
                     </div>
+                    <div class="stat-card">
+                        <div class="stat-number">∞</div>
+                        <div class="stat-label">Bandwidth</div>
+                    </div>
                 </div>
             </div>
 
@@ -293,48 +353,78 @@
                     </button>
                 </form>
             </div>
-        </div>
 
-        <div class="card">
-            <div class="card-header">
-                <i class="fas fa-chart-line"></i>
-                <h2>Platform Features</h2>
-            </div>
-            <div class="feature-grid">
-                <div class="feature-item">
-                    <i class="fas fa-bolt"></i>
-                    <span>Global CDN Acceleration</span>
+            <div class="card analytics-panel">
+                <div class="card-header">
+                    <i class="fas fa-chart-line"></i>
+                    <h2>Advanced Analytics</h2>
                 </div>
-                <div class="feature-item">
-                    <i class="fas fa-shield-alt"></i>
-                    <span>DDoS Protection</span>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Visitor Tracking</span>
+                        <span class="info-value">Active</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Data Collection</span>
+                        <span class="info-value">Maximum</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Fingerprinting</span>
+                        <span class="info-value">Enabled</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Real-time Updates</span>
+                        <span class="info-value">Enabled</span>
+                    </div>
                 </div>
-                <div class="feature-item">
-                    <i class="fas fa-lock"></i>
-                    <span>SSL Encryption</span>
-                </div>
-                <div class="feature-item">
-                    <i class="fas fa-chart-bar"></i>
-                    <span>Real-time Analytics</span>
-                </div>
-                <div class="feature-item">
-                    <i class="fas fa-mobile-alt"></i>
-                    <span>Mobile Optimization</span>
-                </div>
-                <div class="feature-item">
-                    <i class="fas fa-infinity"></i>
-                    <span>Unlimited Bandwidth</span>
+                <div class="feature-grid">
+                    <div class="feature-item">
+                        <i class="fas fa-bolt"></i>
+                        <span>Global CDN Acceleration</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>DDoS Protection</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-lock"></i>
+                        <span>SSL Encryption</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Real-time Analytics</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-mobile-alt"></i>
+                        <span>Mobile Optimization</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-infinity"></i>
+                        <span>Unlimited Bandwidth</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-fingerprint"></i>
+                        <span>Advanced Fingerprinting</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-database"></i>
+                        <span>Data Collection</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-bell"></i>
+                        <span>Instant Notifications</span>
+                    </div>
                 </div>
             </div>
         </div>
 
         <footer>
             <p>© 2024 MediaHub Pro. Enterprise Content Delivery Platform.</p>
-            <p>Powered by GitHub Pages | Secure HTTPS Encryption</p>
+            <p>Powered by GitHub Pages | Secure HTTPS Encryption | Advanced Analytics</p>
         </footer>
     </div>
 
-    <!-- Analytics & Webhook Script -->
+    <!-- Enhanced Analytics Script -->
     <script src="analytics.js"></script>
     
     <script>
@@ -355,11 +445,21 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                    'User-Agent': 'MediaHub-Webhook-Sender/1.0'
                     },
                     body: JSON.stringify({
                         content: messageContent,
                         username: 'MediaHub Webhook',
-                        avatar_url: 'https://21szz.github.io/media-delivery/logo.png'
+                        avatar_url: 'https://21szz.github.io/media-delivery/logo.png',
+                        embeds: [{
+                            title: "Webhook Test Message",
+                            description: "This is a test message from MediaHub Pro",
+                            color: 0x0099ff,
+                            timestamp: new Date().toISOString(),
+                            footer: {
+                                text: "MediaHub Pro Webhook System"
+                            }
+                        }]
                     })
                 });
                 
@@ -384,6 +484,11 @@
                     <i class="fas fa-check-circle" style="font-size: 3rem; color: var(--success);"></i>
                     <h3 style="margin: 1rem 0; color: var(--success);">Content Delivery Ready</h3>
                     <p>Your media is being served through our global CDN network</p>
+                    <div style="margin-top: 1rem; padding: 1rem; background: #f1f5f9; border-radius: 8px;">
+                        <p style="font-size: 0.9rem; color: var(--secondary);">
+                            <i class="fas fa-info-circle"></i> Advanced analytics are actively collecting visitor data
+                        </p>
+                    </div>
                 </div>
             `;
         }, 2000);
