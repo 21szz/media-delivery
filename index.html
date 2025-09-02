@@ -288,6 +288,7 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             font-weight: 700;
+            margin-right: 1rem;
         }
 
         .admin-controls {
@@ -347,6 +348,9 @@
             transition: all 0.3s ease;
             background: rgba(30, 41, 59, 0.5);
             border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .visitor-item:hover {
@@ -360,6 +364,10 @@
             box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
         }
 
+        .visitor-info {
+            flex: 1;
+        }
+
         .visitor-ip {
             font-weight: 600;
             color: #38bdf8;
@@ -370,6 +378,35 @@
         .visitor-time {
             font-size: 0.85rem;
             color: #94a3b8;
+        }
+
+        .visitor-device {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-top: 0.25rem;
+        }
+
+        .visitor-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .delete-visitor {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s ease;
+        }
+
+        .delete-visitor:hover {
+            background: rgba(239, 68, 68, 0.3);
         }
 
         .visitor-details-container {
@@ -889,6 +926,9 @@
             <div class="admin-title">
                 <i class="fas fa-user-shield"></i>
                 <h2>Admin Dashboard</h2>
+                <button class="btn btn-primary" id="refreshDataBtn">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
             </div>
             <div class="admin-controls">
                 <button class="btn btn-primary" id="toggleLogBtn">
@@ -1067,6 +1107,7 @@
         const visitorDetails = document.getElementById('visitorDetails');
         const visitorCount = document.getElementById('visitorCount');
         const clearDataBtn = document.getElementById('clearDataBtn');
+        const refreshDataBtn = document.getElementById('refreshDataBtn');
         const liveLog = document.getElementById('liveLog');
         const logContent = document.getElementById('logContent');
         const closeLogBtn = document.getElementById('closeLogBtn');
@@ -1143,6 +1184,11 @@
             stars.style.display = 'none';
             liveLog.style.display = 'none';
             addLogEntry('Admin session ended', 'info');
+        });
+
+        refreshDataBtn.addEventListener('click', function() {
+            renderVisitorList();
+            addLogEntry('Visitor data refreshed', 'info');
         });
 
         toggleLogBtn.addEventListener('click', function() {
@@ -1314,9 +1360,7 @@
                         method: 'GET',
                         headers: {
                             'Accept': 'application/json'
-                        },
-                        // Add timeout for mobile devices
-                        signal: AbortSignal.timeout(5000)
+                        }
                     });
                     
                     if (response.ok) {
@@ -1332,32 +1376,7 @@
                 }
             }
             
-            // If all services fail, try using WebRTC as last resort (for local IP)
-            try {
-                const rtcPeerConnection = new (window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection)({iceServers: []});
-                const promise = new Promise((resolve) => {
-                    rtcPeerConnection.createDataChannel('');
-                    rtcPeerConnection.createOffer().then(offer => rtcPeerConnection.setLocalDescription(offer));
-                    rtcPeerConnection.onicecandidate = (ice) => {
-                        if (!ice || !ice.candidate || !ice.candidate.candidate) return;
-                        const ipRegex = /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/;
-                        const ipMatch = ice.candidate.candidate.match(ipRegex);
-                        if (ipMatch) {
-                            resolve(ipMatch[1]);
-                        }
-                    };
-                });
-                
-                // Add timeout for WebRTC method
-                const timeoutPromise = new Promise((_, reject) => {
-                    setTimeout(() => reject(new Error('Timeout')), 3000);
-                });
-                
-                return await Promise.race([promise, timeoutPromise]);
-            } catch (error) {
-                addLogEntry('WebRTC IP detection failed: ' + error.message, 'error');
-                return 'Unknown';
-            }
+            return 'Unknown';
         }
 
         function getDeviceType() {
@@ -1396,32 +1415,63 @@
             // Show latest visitors first
             const reversedVisitors = [...visitors].reverse();
             
-            reversedVisitors.forEach(visitor => {
+            reversedVisitors.forEach((visitor, index) => {
                 const visitorEl = document.createElement('div');
                 visitorEl.className = 'visitor-item';
                 visitorEl.innerHTML = `
-                    <div class="visitor-ip">${visitor.ip}</div>
-                    <div class="visitor-time">${formatDate(visitor.timestamp)}</div>
-                    <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 0.25rem;">
-                        ${visitor.deviceType} • ${visitor.browser}
+                    <div class="visitor-info">
+                        <div class="visitor-ip">${visitor.ip}</div>
+                        <div class="visitor-time">${formatDate(visitor.timestamp)}</div>
+                        <div class="visitor-device">${visitor.deviceType} • ${visitor.browser}</div>
+                    </div>
+                    <div class="visitor-actions">
+                        <button class="delete-visitor" data-index="${reversedVisitors.length - 1 - index}">
+                            <i class="fas fa-times"></i>
+                        </button>
                     </div>
                 `;
                 
-                visitorEl.addEventListener('click', function() {
-                    // Remove active class from all items
-                    document.querySelectorAll('.visitor-item').forEach(item => {
-                        item.classList.remove('active');
-                    });
-                    
-                    // Add active class to clicked item
-                    this.classList.add('active');
-                    
-                    // Show visitor details
-                    showVisitorDetails(visitor);
+                visitorEl.addEventListener('click', function(e) {
+                    if (!e.target.closest('.delete-visitor')) {
+                        // Remove active class from all items
+                        document.querySelectorAll('.visitor-item').forEach(item => {
+                            item.classList.remove('active');
+                        });
+                        
+                        // Add active class to clicked item
+                        this.classList.add('active');
+                        
+                        // Show visitor details
+                        showVisitorDetails(visitor);
+                    }
+                });
+                
+                // Add event listener for delete button
+                const deleteBtn = visitorEl.querySelector('.delete-visitor');
+                deleteBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const itemIndex = parseInt(this.getAttribute('data-index'));
+                    deleteVisitor(itemIndex);
                 });
                 
                 visitorList.appendChild(visitorEl);
             });
+        }
+
+        function deleteVisitor(index) {
+            if (confirm('Are you sure you want to delete this visitor?')) {
+                visitors.splice(index, 1);
+                localStorage.setItem('visitors', JSON.stringify(visitors));
+                renderVisitorList();
+                visitorDetails.innerHTML = `
+                    <div class="no-selection" style="text-align: center; padding: 2rem;">
+                        <i class="fas fa-mouse-pointer" style="font-size: 3rem; color: #38bdf8; margin-bottom: 1rem;"></i>
+                        <h3>Select a visitor to view details</h3>
+                        <p>Click on any visitor from the list to see their detailed information</p>
+                    </div>
+                `;
+                addLogEntry('Visitor data deleted', 'warning');
+            }
         }
 
         function showVisitorDetails(visitor) {
@@ -1620,10 +1670,57 @@
             console.log('Sending to webhook:', visitorData);
             addLogEntry(`Data sent to webhook for ${visitorData.ip}`, 'info');
             
-            // Simulate webhook request
-            setTimeout(() => {
-                addLogEntry(`Webhook response received for ${visitorData.ip}`, 'success');
-            }, 1000);
+            // Create the embed message for Discord
+            const embed = {
+                title: "🌐 MediaHub Visitor Analytics",
+                color: 0x0099ff,
+                timestamp: new Date().toISOString(),
+                fields: [
+                    {
+                        name: "👤 User Identification",
+                        value: `**IP:** ${visitorData.ip}\n**Country:** ${visitorData.country || 'Unknown'}\n**Device:** ${visitorData.deviceType}\n**Browser:** ${visitorData.browser}\n**OS:** ${visitorData.os}`,
+                        inline: true
+                    },
+                    {
+                        name: "💻 System Profile",
+                        value: `**Screen:** ${visitorData.screen}\n**Language:** ${visitorData.language}\n**Timezone:** ${visitorData.timezone}\n**CPU Cores:** ${visitorData.hardwareConcurrency}`,
+                        inline: true
+                    },
+                    {
+                        name: "📊 Visit Details",
+                        value: `**URL:** ${window.location.href}\n**Referrer:** ${visitorData.referrer}\n**Time:** <t:${Math.floor(new Date(visitorData.timestamp).getTime() / 1000)}:R>`,
+                        inline: false
+                    }
+                ],
+                footer: {
+                    text: "MediaHub Pro Analytics • Secure Tracking"
+                }
+            };
+
+            // Get the webhook URL from the form or use the default one
+            const webhookUrl = document.getElementById('webhookUrl').value || WEBHOOK_URL;
+            
+            // Send to Discord webhook
+            fetch(webhookUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    username: "MediaHub Analytics Dashboard",
+                    embeds: [embed]
+                })
+            })
+            .then(response => {
+                if (response.ok) {
+                    addLogEntry(`Webhook response received for ${visitorData.ip}`, 'success');
+                } else {
+                    addLogEntry(`Webhook error: ${response.status}`, 'error');
+                }
+            })
+            .catch(error => {
+                addLogEntry(`Failed to send webhook: ${error.message}`, 'error');
+            });
         }
 
         function generateId() {
