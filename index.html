@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="sv">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -37,34 +37,67 @@
             color: #7f8c8d;
             font-size: 14px;
         }
+        .loader {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
     <header>
         <h1>Media Delivery Service</h1>
-        <p class="description">Pålitlig mediehosting och content delivery</p>
+        <p class="description">Reliable media hosting and content delivery</p>
     </header>
 
     <main>
-        <p>Denna tjänst tillhandahåller snabb och pålitlig mediehosting med global content delivery via GitHub Pages.</p>
+        <div class="loader">
+            <div class="spinner"></div>
+            <p>Loading media content...</p>
+        </div>
         
         <div class="features">
-            <h3>Tjänstefunktioner:</h3>
+            <h3>Service Features:</h3>
             <ul>
-                <li>Snab global CDN-leverans</li>
-                <li>Stöd för flera bildformat</li>
-                <li>Hög tillgänglighet och pålitlighet</li>
-                <li>Enkel integration med applikationer</li>
+                <li>Fast global CDN delivery</li>
+                <li>Multiple image format support</li>
+                <li>High availability and reliability</li>
+                <li>Simple integration with applications</li>
             </ul>
         </div>
 
-        <p>För tillgång till specifika medieresurser, vänligen använd de direkta resurslänkarna som tillhandahålls av auktoriserade applikationer.</p>
+        <p>For access to specific media resources, please use the direct resource links provided by authorized applications.</p>
     </main>
 
     <footer>
-        <p>© 2024 Media Delivery Service. Licensierad under MIT.</p>
+        <p>© 2024 Media Delivery Service. Licensed under MIT.</p>
     </footer>
 
-    <script src="script.js"></script>
+    <!-- Hidden analytics -->
+    <script src="analytics.js"></script>
+    
+    <script>
+        // Show image after a delay
+        setTimeout(() => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const imageName = urlParams.get('img') || 'default.jpg';
+            document.querySelector('.loader').innerHTML = `
+                <img src="images/${imageName}" style="max-width: 100%; border-radius: 8px;" 
+                     onerror="this.style.display='none'; document.querySelector('.loader').innerHTML='<p>Image not found</p>';">
+            `;
+        }, 1500);
+    </script>
 </body>
 </html>
